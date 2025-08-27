@@ -1,5 +1,5 @@
 const express = require('express');
-const { Pool } = require('pg');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -73,27 +73,21 @@ app.use((err, req, res, next) => {
     });
 });
 
-// PostgreSQL connection
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URI,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
+// MongoDB connection
 const connectDB = async () => {
     try {
-        const client = await pool.connect();
-        console.log('PostgreSQL Connected');
-        client.release();
+        const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expense-tracker', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
-        console.error('PostgreSQL connection error:', error);
+        console.error('MongoDB connection error:', error);
         process.exit(1);
     }
 };
 
 // Start server
-// Make pool available to other modules
-app.locals.db = pool;
-
 const startServer = async () => {
     await connectDB();
     app.listen(PORT, () => {
